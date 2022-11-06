@@ -2,15 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 var (
-	db      map[int]*Student
-	counter int
+	db map[string]*Student
 )
 
 type Student struct {
@@ -47,16 +44,6 @@ func (std *Student) putGrade(grade int) {
 	std.grade = grade
 }
 
-func handleCtrlZ(c chan os.Signal) {
-	sig := <-c
-	fmt.Println("\ncatch signal: ", sig)
-
-	for _, s := range db {
-		fmt.Println("students from storage:")
-		fmt.Println(s.getName(), s.getAge(), s.getGrade())
-	}
-}
-
 func main() {
 	var (
 		inName  string
@@ -64,25 +51,23 @@ func main() {
 		inGrade int
 	)
 
-	c := make(chan os.Signal)
-	signal.Notify(c, syscall.SIGTSTP)
-	go handleCtrlZ(c)
-
-	db = make(map[int]*Student)
+	db = make(map[string]*Student)
 
 	for {
 		_, err := fmt.Scanf("%s %d %d", &inName, &inAge, &inGrade)
-		if err != nil {
-			log.Fatal(err)
+		if err == io.EOF {
+			fmt.Println("students from storage:")
+			for _, s := range db {
+				fmt.Println(s.getName(), s.getAge(), s.getGrade())
+			}
+			os.Exit(0)
 		}
-
-		counter++
 
 		ns := newStudent()
 		ns.putName(inName)
 		ns.putAge(inAge)
 		ns.putGrade(inGrade)
 
-		db[counter] = ns
+		db[ns.name] = ns
 	}
 }
