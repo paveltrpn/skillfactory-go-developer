@@ -1,15 +1,7 @@
-package main
+package user
 
 type User struct {
 	Name    string `json:"Name"`
 	Age     uint   `json:"Age"`
-	Freinds []int
-}
-
-var (
-	Users map[int]User
-)
-
-func main() {
-
+	Friends []int  `json:"Friends"`
 }
