@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sf28_5/pkg/storage"
-	"sf28_5/pkg/student"
+	"skillfactory-go-developer/pkg/storage"
+	"skillfactory-go-developer/pkg/student"
 )
 
 func main() {

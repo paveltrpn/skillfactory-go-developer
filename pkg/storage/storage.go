@@ -2,7 +2,7 @@ package storage
 
 import (
 	"fmt"
-	"sf28_5/pkg/student"
+	"skillfactory-go-developer/pkg/student"
 )
 
 type Storage struct {
