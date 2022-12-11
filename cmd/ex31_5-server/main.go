@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -143,6 +144,13 @@ func handleShowUsers(writer http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
+	var (
+		port int
+	)
+
+	flag.IntVar(&port, "port", 3333, "enter port")
+	flag.Parse()
+
 	userDbInstance.Init("db.txt")
 
 	router := chi.NewRouter()
@@ -155,7 +163,7 @@ func main() {
 	router.Get("/show", handleShowUsers)
 
 	server := http.Server{
-		Addr:    fmt.Sprintf(":%d", 3333),
+		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,
 	}
 

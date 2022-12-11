@@ -102,7 +102,6 @@ func requestShowUsers(port int) {
 	if err != nil {
 		log.Fatalf("requestUpdateAge(): error sending request - %v\n", err)
 	}
-
 }
 
 func main() {
