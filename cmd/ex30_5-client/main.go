@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -108,6 +109,11 @@ func main() {
 	var (
 		action string
 	)
+
+	flag.IntVar(&reqPort, "port", 3333, "enter port")
+	flag.Parse()
+
+	fmt.Printf("request sending to port - %v\n", reqPort)
 
 	for {
 		fmt.Printf("choose action - create make-friends delete show-friends update-age show\n")

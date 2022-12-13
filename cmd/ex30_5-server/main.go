@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -143,7 +144,15 @@ func handleShowUsers(writer http.ResponseWriter, request *http.Request) {
 }
 
 func main() {
-	userDbInstance.Init("db.txt")
+	var (
+		port int
+	)
+
+	flag.IntVar(&port, "port", 3333, "enter port")
+	flag.Parse()
+
+	userDbInstance.Init("db.json")
+	defer userDbInstance.Close()
 
 	router := chi.NewRouter()
 
@@ -155,10 +164,11 @@ func main() {
 	router.Get("/show", handleShowUsers)
 
 	server := http.Server{
-		Addr:    fmt.Sprintf(":%d", 3333),
+		Addr:    fmt.Sprintf(":%d", port),
 		Handler: router,
 	}
 
+	fmt.Printf("Server listening at port - %v\n", port)
 	if err := server.ListenAndServe(); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
 			fmt.Printf("error running http server: %s\n", err)
