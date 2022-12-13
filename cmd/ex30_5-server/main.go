@@ -143,6 +143,16 @@ func handleShowUsers(writer http.ResponseWriter, request *http.Request) {
 
 }
 
+func handleWannaBeTested(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("test me!\n")
+
+	writer.WriteHeader(200)
+	_, err := writer.Write([]byte("test me completely"))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func main() {
 	var (
 		port int
@@ -162,6 +172,7 @@ func main() {
 	router.Get("/friends/{user_id}", hanldeShowFriends)
 	router.Put("/{user_id}", handleUpdateAge)
 	router.Get("/show", handleShowUsers)
+	router.Get("/test", handleWannaBeTested)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
