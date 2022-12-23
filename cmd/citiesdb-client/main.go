@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -40,14 +41,56 @@ func makeAndSendReq(data []byte, method string, port int, url string) error {
 	return nil
 }
 
-func requestTest(port int) {
-	err := makeAndSendReq([]byte{}, http.MethodGet, port, "/test")
+func requestList(port int) {
+	err := makeAndSendReq([]byte{}, http.MethodGet, port, "/list")
 	if err != nil {
 		log.Fatalf("requestUpdateAge(): error sending request - %v\n", err)
 	}
 }
 
-func requestAddCity(info citiesdb.CityInfo)
+func requestGetById(id, port int) {
+	err := makeAndSendReq([]byte{}, http.MethodGet, port, fmt.Sprintf("/get/%d", id))
+	if err != nil {
+		log.Fatalf("requestUpdateAge(): error sending request - %v\n", err)
+	}
+}
+
+func requestAddCity(info citiesdb.CityInfo, port int) {
+	reqJson, err := json.Marshal(info)
+	if err != nil {
+		log.Fatalf("requestAddCity(): error marshalling json - %v\n", err)
+	}
+
+	err = makeAndSendReq(reqJson, http.MethodPost, port, "/add")
+	if err != nil {
+		log.Fatalf("requestAddCity(): error sending request - %v\n", err)
+	}
+}
+
+func requestDelete(id, port int) {
+	err := makeAndSendReq([]byte{}, http.MethodDelete, port, fmt.Sprintf("/delete/%d", id))
+	if err != nil {
+		log.Fatalf("requestDelete(): error sending request - %v\n", err)
+	}
+}
+
+func requestUpdatePopulation(id, count, port int) {
+	params := make(map[string]int)
+	params["id"] = id
+	params["count"] = count
+
+	reqJson, err := json.Marshal(params)
+	if err != nil {
+		log.Fatalf("requestUpdatePopulation(): error marshalling json - %v\n", err)
+	}
+
+	err = makeAndSendReq(reqJson, http.MethodPost, port, "/update_pop")
+	if err != nil {
+		log.Fatalf("requestUpdatePopulation(): error sending request - %v\n", err)
+	}
+
+}
+
 func main() {
 	var (
 		action string
@@ -59,14 +102,55 @@ func main() {
 	fmt.Printf("request sending to port - %v\n", reqPort)
 
 	for {
-		fmt.Printf("choose action - test\n")
+		fmt.Printf("choose action - list get add delete update_pop\n")
 		fmt.Scan(&action)
 
 		switch action {
-		case "test":
-			fmt.Printf("test\n")
+		case "list":
+			requestList(reqPort)
 
-			requestTest(reqPort)
+		case "get":
+			fmt.Printf("enter city id (number)\n")
+
+			var id int
+			fmt.Scanf("%v", &id)
+
+			requestGetById(id, reqPort)
+
+		case "add":
+			fmt.Printf("enter name (string), region (string), district (string), population (int), foundation (int)\n")
+
+			var (
+				name       string
+				region     string
+				district   string
+				population int
+				foundation int
+			)
+
+			fmt.Scanf("%s %s %s %d %d", &name, &region, &district, &population, &foundation)
+
+			requestAddCity(citiesdb.CityInfo{Id: 0, Name: name, Region: region, District: district, Population: population, Foundation: foundation}, reqPort)
+
+		case "delete":
+			fmt.Printf("ender id (number)\n")
+
+			var id int
+
+			fmt.Scanf("%v", &id)
+
+			requestDelete(id, reqPort)
+
+		case "update_pop":
+			fmt.Printf("ender id (number) count (number)\n")
+
+			var (
+				id, count int
+			)
+
+			fmt.Scanf("%v %v", &id, &count)
+
+			requestUpdatePopulation(id, count, reqPort)
 
 		default:
 			fmt.Printf("unknown action - %v\n", action)

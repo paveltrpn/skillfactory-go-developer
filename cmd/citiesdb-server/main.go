@@ -2,23 +2,123 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"skillfactory-go-developer/pkg/citiesdb"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/go-chi/chi"
 )
 
-func handleWannaBeTested(writer http.ResponseWriter, request *http.Request) {
-	fmt.Printf("test me!\n")
+var dbInstance citiesdb.CitiesDB
 
-	writer.WriteHeader(200)
-	_, err := writer.Write([]byte("test me completely"))
+func handleListDb(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("list cities db\n")
+
+	var rt []string
+
+	for e := dbInstance.Db.Front(); e != nil; e = e.Next() {
+		foo := e.Value.(*citiesdb.CityInfo)
+		rt = append(rt, fmt.Sprintf("id - %v name - %v, region - %v, district - %v, population - %v, foundation - %v\n",
+			foo.Id, foo.Name, foo.Region, foo.District, foo.Population, foo.Foundation))
+	}
+
+	_, err := writer.Write([]byte(strings.Join(rt, "")))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func handleGetById(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("get by id\n")
+
+	cityId, _ := strconv.Atoi(chi.URLParam(request, "id"))
+
+	cInfoStruct, err := dbInstance.GetById(cityId)
+
+	var infoString string
+	if err == nil {
+		writer.WriteHeader(200)
+		infoString = fmt.Sprintf("id - %v name - %v, region - %v, district - %v, population - %v, foundation - %v\n",
+			cInfoStruct.Id, cInfoStruct.Name, cInfoStruct.Region, cInfoStruct.District, cInfoStruct.Population, cInfoStruct.Foundation)
+	} else {
+		writer.WriteHeader(503)
+		infoString = err.Error()
+	}
+
+	_, err = writer.Write([]byte(infoString))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func handleAddCity(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("add city info\n")
+
+	reqBody, _ := io.ReadAll(request.Body)
+
+	var city citiesdb.CityInfo
+
+	json.Unmarshal(reqBody, &city)
+
+	dbInstance.Add(city)
+
+	writer.WriteHeader(201)
+	_, err := writer.Write([]byte("proceesed"))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func handleDelete(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("delete\n")
+
+	cityId, _ := strconv.Atoi(chi.URLParam(request, "id"))
+
+	err := dbInstance.Delete(cityId)
+
+	var infoString string
+	if err == nil {
+		writer.WriteHeader(200)
+		infoString = "delete success"
+	} else {
+		writer.WriteHeader(503)
+		infoString = err.Error()
+	}
+
+	_, err = writer.Write([]byte(infoString))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func handleUpdatePopulation(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("update population\n")
+
+	reqBody, _ := io.ReadAll(request.Body)
+
+	var params map[string]int
+	json.Unmarshal(reqBody, &params)
+
+	var respString string
+	if err := dbInstance.UpdatePopulationInfo(params["id"], params["count"]); err == nil {
+		writer.WriteHeader(200)
+		respString = "success"
+	} else {
+		writer.WriteHeader(503)
+		respString = err.Error()
+	}
+
+	_, err := writer.Write([]byte(respString))
 	if err != nil {
 		log.Println(err)
 	}
@@ -32,8 +132,15 @@ func main() {
 	flag.IntVar(&port, "port", 3333, "enter port")
 	flag.Parse()
 
+	dbInstance.Init("foobar")
+	defer dbInstance.Close()
+
 	router := chi.NewRouter()
-	router.Get("/test", handleWannaBeTested)
+	router.Get("/list", handleListDb)
+	router.Get("/get/{id}", handleGetById)
+	router.Post("/add", handleAddCity)
+	router.Delete("/delete/{id}", handleDelete)
+	router.Post("/update_pop", handleUpdatePopulation)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
@@ -50,12 +157,12 @@ func main() {
 	}()
 	log.Printf("server started at port - %v\n", port)
 
-	<-done
-	log.Print("server stopped")
+	sig := <-done
+	log.Printf("server stopped by signal - %v\n", sig.String())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
-		//extra handling here
+		fmt.Printf("dumped\n")
 		cancel()
 	}()
 
