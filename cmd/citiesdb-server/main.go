@@ -124,15 +124,53 @@ func handleUpdatePopulation(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
+func handleGetByRegion(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("get by region\n")
+
+	var rt []string
+
+	info := dbInstance.GetByRegion(chi.URLParam(request, "region"))
+
+	for _, foo := range info {
+		rt = append(rt, fmt.Sprintf("id - %v name - %v, region - %v, district - %v, population - %v, foundation - %v\n",
+			foo.Id, foo.Name, foo.Region, foo.District, foo.Population, foo.Foundation))
+	}
+
+	_, err := writer.Write([]byte(strings.Join(rt, "")))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func handleGetByDistrict(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("get by region\n")
+
+	var rt []string
+
+	info := dbInstance.GetByDistrict(chi.URLParam(request, "district"))
+
+	for _, foo := range info {
+		rt = append(rt, fmt.Sprintf("id - %v name - %v, region - %v, district - %v, population - %v, foundation - %v\n",
+			foo.Id, foo.Name, foo.Region, foo.District, foo.Population, foo.Foundation))
+	}
+
+	_, err := writer.Write([]byte(strings.Join(rt, "")))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func main() {
 	var (
-		port int
+		port       int
+		dbFileName string
 	)
 
+	flag.StringVar(&dbFileName, "db", "db.csv", "enter file name to store data")
 	flag.IntVar(&port, "port", 3333, "enter port")
 	flag.Parse()
 
-	dbInstance.Init("foobar")
+	dbInstance.Init(dbFileName)
 	defer dbInstance.Close()
 
 	router := chi.NewRouter()
@@ -141,6 +179,8 @@ func main() {
 	router.Post("/add", handleAddCity)
 	router.Delete("/delete/{id}", handleDelete)
 	router.Post("/update_pop", handleUpdatePopulation)
+	router.Get("/get_by_region/{region}", handleGetByRegion)
+	router.Get("/get_by_district/{district}", handleGetByDistrict)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
@@ -162,7 +202,8 @@ func main() {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
-		fmt.Printf("dumped\n")
+		dbInstance.Dump()
+		fmt.Printf("data base dumped to - %v\n", dbFileName)
 		cancel()
 	}()
 

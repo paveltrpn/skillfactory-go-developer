@@ -91,6 +91,20 @@ func requestUpdatePopulation(id, count, port int) {
 
 }
 
+func requestByRegion(region string, port int) {
+	err := makeAndSendReq([]byte{}, http.MethodGet, port, fmt.Sprintf("/get_by_region/%s", region))
+	if err != nil {
+		log.Fatalf("requestByRegion(): error sending request - %v\n", err)
+	}
+}
+
+func requestByDistrict(district string, port int) {
+	err := makeAndSendReq([]byte{}, http.MethodGet, port, fmt.Sprintf("/get_by_district/%s", district))
+	if err != nil {
+		log.Fatalf("requestByDistrict(): error sending request - %v\n", err)
+	}
+}
+
 func main() {
 	var (
 		action string
@@ -102,7 +116,7 @@ func main() {
 	fmt.Printf("request sending to port - %v\n", reqPort)
 
 	for {
-		fmt.Printf("choose action - list get add delete update_pop\n")
+		fmt.Printf("choose action - list get add delete update_pop by_region by_district\n")
 		fmt.Scan(&action)
 
 		switch action {
@@ -151,6 +165,22 @@ func main() {
 			fmt.Scanf("%v %v", &id, &count)
 
 			requestUpdatePopulation(id, count, reqPort)
+
+		case "by_region":
+			fmt.Printf("enter region (string)\n")
+
+			var region string
+			fmt.Scan(&region)
+
+			requestByRegion(region, reqPort)
+
+		case "by_district":
+			fmt.Printf("enter district (string)\n")
+
+			var district string
+			fmt.Scan(&district)
+
+			requestByDistrict(district, reqPort)
 
 		default:
 			fmt.Printf("unknown action - %v\n", action)
