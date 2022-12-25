@@ -160,6 +160,50 @@ func handleGetByDistrict(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
+func handleGetByPopulation(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("get by population\n")
+
+	reqBody, _ := io.ReadAll(request.Body)
+
+	var params map[string]int
+	json.Unmarshal(reqBody, &params)
+
+	var rt []string
+	info := dbInstance.GetByPopulation(params["from"], params["to"])
+	for _, foo := range info {
+		rt = append(rt, fmt.Sprintf("id - %v name - %v, region - %v, district - %v, population - %v, foundation - %v\n",
+			foo.Id, foo.Name, foo.Region, foo.District, foo.Population, foo.Foundation))
+	}
+
+	writer.WriteHeader(200)
+	_, err := writer.Write([]byte(strings.Join(rt, "")))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func handleGetByFoundation(writer http.ResponseWriter, request *http.Request) {
+	fmt.Printf("get by population\n")
+
+	reqBody, _ := io.ReadAll(request.Body)
+
+	var params map[string]int
+	json.Unmarshal(reqBody, &params)
+
+	var rt []string
+	info := dbInstance.GetByFoundation(params["from"], params["to"])
+	for _, foo := range info {
+		rt = append(rt, fmt.Sprintf("id - %v name - %v, region - %v, district - %v, population - %v, foundation - %v\n",
+			foo.Id, foo.Name, foo.Region, foo.District, foo.Population, foo.Foundation))
+	}
+
+	writer.WriteHeader(200)
+	_, err := writer.Write([]byte(strings.Join(rt, "")))
+	if err != nil {
+		log.Println(err)
+	}
+}
+
 func main() {
 	var (
 		port       int
@@ -181,6 +225,8 @@ func main() {
 	router.Post("/update_pop", handleUpdatePopulation)
 	router.Get("/get_by_region/{region}", handleGetByRegion)
 	router.Get("/get_by_district/{district}", handleGetByDistrict)
+	router.Get("/get_by_population", handleGetByPopulation)
+	router.Get("/get_by_foundation", handleGetByFoundation)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
